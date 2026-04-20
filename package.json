@@ -1,0 +1,30 @@
+{
+  "name": "mini-vue",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "tsx ./scripts/dev.ts",
+    "dev:reacitve": "pnpm dev reactivity -f esm-browser",
+    "dev:prod": "tsx ./scripts/dev.ts --prod",
+    "build": "tsx ./scripts/build.ts",
+    "build:dev": "tsx ./scripts/build.ts --devOnly",
+    "build:prod": "tsx ./scripts/build.ts --prodOnly",
+    "build:test": "tsx ./scripts/build.ts --devOnly --sourceMap",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "verify": "pnpm typecheck && pnpm test:run",
+    "hooks:install": "node ./scripts/setup-git-hooks.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "esbuild": "^0.28.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.4"
+  }
+}

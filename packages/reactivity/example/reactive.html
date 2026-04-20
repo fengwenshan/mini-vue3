@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+<!-- <script type="module">
+  import { reactive, isReactive, isProxy } from './vue.esm-browser.js'
+  // import { reactive, isReactive, isProxy } from '../dist/reactivity.esm-browser.js'
+  const original = {
+    name: 'why',
+    age: 18,
+    attrs: {
+      parentName: 'zhangsan'
+    }
+  }
+  const proxy = reactive(original)
+  const proxy1 = reactive(original)
+  const proxy2 = reactive(proxy1)
+  console.log('1.代理对象：', proxy)
+  console.log('1.原始对象与代理对象不同：', original === proxy)
+  console.log('2.重复代理同地址对象，返回同一代理对象：', proxy === proxy1)
+  console.log('3.嵌套对象代理：', proxy.attrs === original.attrs)
+  console.log('4.代理对象被代理,地址相等：', proxy1 === proxy2)
+  console.log('5.判断是否响应式：', isReactive(original), isReactive(proxy))
+  console.log('5.判断是否被代理：', isProxy(original), isProxy(proxy))
+</script> -->
+
+
+<!-- <script type="module">
+  // import { ref, reactive, isRef } from '../dist/reactivity.esm-browser.js'
+  import { ref, isRef, reactive } from './vue.esm-browser.js'
+
+  // 自动解包：ref作为reactive对象里面的属性会自动解包
+  const count = ref(0)
+
+  count.value = 2
+
+  // 判断是否为ref对象
+  const flag = isRef(count)
+  console.log('Ref 基本类型：',flag)
+
+  const state = reactive({ count })
+  console.log('ref作为响应式对象的属性被访问：', state.count) // 2
+
+  state.count = 1 
+  console.log('ref作为响应式对象的属性修改后访问：', count.value) // 1
+
+  // 非原始值 通过 reactive 转换为响应式代理
+  const original = {
+    name: 'why',
+    age: 18,
+    attrs: {
+      parentName: 'zhangsan'
+    }
+  }
+  const r1 = ref(original)
+  const r2 = ref(r1)
+  const r3 = ref({ a: 1 })
+  console.log('ref创建值再次给ref创建：', r2.value)
+
+  r1.value = r3
+  console.log(r1.value)
+
+</script> -->
+
+</body>
+</html>

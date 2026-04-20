@@ -1,0 +1,4 @@
+#!/bin/sh
+
+echo "running pre-commit checks..."
+pnpm verify

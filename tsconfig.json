@@ -1,0 +1,61 @@
+{
+  "compilerOptions": {
+    // 编译后的文件输出到 temp 目录。在开发过程中，这通常用于存放临时的编译产物，而不是最终发布给用户的生产代码。
+    "outDir": "temp",
+    // 在开发框架本身时，可能为了简化调试流程或减少文件输出而关闭了 sourceMap。
+    "sourceMap": false,
+    "target": "es2016",
+    // 强制生成的文件使用 LF (\n) 换行符。
+    "newLine": "LF",
+    // 用于控制类字段（class fields）在编译为 JavaScript 时的初始化语义。 Vue不能开，会被干扰响应式
+    "useDefineForClassFields": false,
+    // 告诉编译器保留 ES Module (import/export) 语法
+    "module": "esnext",
+    // 使用现代打包工具（如 Vite/Rollup）的解析策略。
+    "moduleResolution": "bundler",
+    "allowJs": false,
+    "strict": true,
+    // 如果有声明了但没使用的变量，直接报错。
+    "noUnusedLocals": true,
+    // 启用装饰器语法（@Component 等）
+    "experimentalDecorators": true,
+    // 构建脚本或测试中经常需要读取 package.json 或测试用的 JSON 数据。
+    "resolveJsonModule": true,
+    // 强制每个文件作为独立的模块处理。
+    "isolatedModules": true,
+    // 跳过 node_modules 中类型定义文件（.d.ts）的检查。
+    "skipLibCheck": true,
+    // 允许 import fs from 'fs' 这种默认导入方式，兼容 CommonJS 模块。c
+    "esModuleInterop": true,
+    // 编译后的代码保留注释。
+    "removeComments": false,
+    // 保留 JSX 代码原样，不进行转换。
+    "jsx": "preserve",
+    // 告诉 TS 这是一个浏览器环境，因此需要包含 DOM 类型定义。
+    "lib": ["es2016", "dom"],
+    // 显式引入全局类型声明
+    "types": ["node"],
+    "rootDir": ".",
+    "ignoreDeprecations": "6.0",
+    "baseUrl": ".",
+    // 这里的路径映射非常关键，它定义了 Monorepo 内部的模块别名。
+    "paths": {
+      "@vue/*": ["packages/*/src"]
+    },
+    // 这是一个较新的 TypeScript 特性，旨在优化大型项目中类型声明文件的生成速度，非常适合 Vue 这样的库开发场景。
+    "isolatedDeclarations": true,
+    // 这是启用项目引用的关键。它允许将这个庞大的 Vue 仓库拆分成多个独立的子项目（例如 runtime-core, reactivity, compiler-core 等），每个子项目可以独立编译和进行类型检查。这极大地提升了大型项目的编译性能和增量构建速度。
+    "composite": true
+  },
+  // 它不仅包含了所有包的源代码 (packages/*/src)，还包含了测试文件 (packages/*/__tests__) 和构建脚本 (scripts/*)，表明这是一个统一的开发环境配置。
+  "include": [
+    "packages/global.d.ts",
+    "packages/*/src",
+    "packages/*/__tests__",
+    "packages/vue/jsx-runtime",
+    "packages/runtime-dom/types/jsx.d.ts",
+    "scripts/*",
+    "rolldown.dts.config.js"
+  ],
+  "exclude": ["packages-private/sfc-playground/src/vue-dev-proxy*"]
+}

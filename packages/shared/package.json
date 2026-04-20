@@ -1,0 +1,14 @@
+{
+  "name": "@vue/shared",
+  "version": "1.0.0",
+  "description": "@vue/share",
+  "main": "src/index.ts",
+  "type": "module",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dayjs": "^1.11.20"
+  }
+}

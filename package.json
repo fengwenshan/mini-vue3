@@ -11,7 +11,10 @@
     "build:prod": "tsx ./scripts/build.ts --prodOnly",
     "build:test": "tsx ./scripts/build.ts --devOnly --sourceMap",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "verify": "pnpm typecheck && pnpm test:run",
+    "hooks:install": "node ./scripts/setup-git-hooks.mjs"
   },
   "keywords": [],
   "author": "",

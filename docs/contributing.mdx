@@ -1,0 +1,143 @@
+---
+title: 工程化与提交规范
+description: 说明 mini-vue 的本地校验、Git hooks 和提交信息规范。
+---
+
+# 工程化与提交规范
+
+本文档说明当前工程的提交前校验和提交信息规范。
+
+## 一、安装 Git Hooks
+
+本工程使用仓库内的 `.githooks` 目录管理 Git hooks，不依赖 Husky。
+
+首次克隆仓库后执行：
+
+```bash
+pnpm hooks:install
+```
+
+该命令会执行：
+
+```bash
+git config core.hooksPath .githooks
+```
+
+配置完成后，Git 会从 `.githooks` 目录读取 hook 脚本。
+
+## 二、提交前校验
+
+提交代码时会自动执行：
+
+```bash
+pnpm verify
+```
+
+当前 `verify` 包含两步：
+
+```bash
+pnpm typecheck
+pnpm test:run
+```
+
+含义：
+
+| 命令 | 作用 |
+| --- | --- |
+| `pnpm typecheck` | 执行 TypeScript 类型检查 |
+| `pnpm test:run` | 执行一次 Vitest 单元测试 |
+
+如果任一步失败，本次提交会被阻止。
+
+也可以手动执行：
+
+```bash
+pnpm verify
+```
+
+## 三、提交信息规范
+
+提交信息采用 Conventional Commits 风格：
+
+```text
+type(scope): subject
+```
+
+`scope` 可以省略：
+
+```text
+type: subject
+```
+
+示例：
+
+```text
+feat(reactivity): add ref support
+test: cover array reactive behavior
+docs: add build configuration guide
+build: add git hooks
+```
+
+## 四、允许的 type
+
+| type | 说明 |
+| --- | --- |
+| `feat` | 新功能 |
+| `fix` | 修复问题 |
+| `docs` | 文档 |
+| `style` | 代码格式，不影响逻辑 |
+| `refactor` | 重构，不新增功能也不修 bug |
+| `perf` | 性能优化 |
+| `test` | 测试相关 |
+| `build` | 构建系统、依赖、脚本 |
+| `ci` | CI 配置 |
+| `chore` | 杂项维护 |
+| `revert` | 回滚提交 |
+
+## 五、校验规则
+
+提交信息第一行必须满足：
+
+```text
+type(scope): subject
+```
+
+或者：
+
+```text
+type: subject
+```
+
+限制：
+
+- `type` 必须是允许列表中的一种
+- `scope` 只能使用小写字母、数字和短横线
+- `subject` 最长 72 个字符
+- `subject` 不能为空
+
+合法示例：
+
+```text
+feat(ref): add object ref support
+fix(reactive): cache nested array proxy
+docs: document commit workflow
+```
+
+非法示例：
+
+```text
+update code
+Feat: add ref
+feat:
+feat(scope): this subject is intentionally too long and should be shorter than the allowed limit
+```
+
+## 六、跳过 Hooks
+
+特殊情况下可以临时跳过 hooks：
+
+```bash
+git commit --no-verify -m "chore: temporary commit"
+```
+
+不推荐日常使用。正常开发应保证 `pnpm verify` 通过后再提交。

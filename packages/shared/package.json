@@ -10,10 +10,6 @@
   "main": "index.js",
   "module": "dist/shared.esm-bundler.js",
   "types": "dist/shared.d.ts",
-  "files": [
-    "index.js",
-    "dist"
-  ],
   "exports": {
     ".": {
       "types": "./dist/shared.d.ts",
@@ -28,6 +24,10 @@
     },
     "./*": "./*"
   },
+  "files": [
+    "index.js",
+    "dist"
+  ],
   "sideEffects": false,
   "buildOptions": {
     "formats": [

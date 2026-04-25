@@ -1,0 +1,603 @@
+---
+title: Mini Vue 工程构建配置说明
+description: 说明 mini-vue 工程的包结构、开发构建、生产构建和测试配置。
+---
+
+# Mini Vue 工程构建配置说明
+
+本文档说明当前 `mini-vue` 工程的构建配置方式。这个工程参考 Vue core 的源码组织方式，不使用 `.env.development`、`.env.production` 这类应用项目常见的环境文件，而是通过命令参数、包内 `buildOptions` 和构建脚本来控制开发、生产和测试构建。
+
+## 一、工程结构
+
+当前工程是一个 pnpm workspace，核心目录如下：
+
+```text
+mini-vue
++-- packages
+|   +-- reactivity
+|   |   +-- src
+|   |   |   +-- index.ts
+|   |   +-- __test__
+|   |   +-- index.js
+|   |   +-- package.json
+|   +-- shared
+|       +-- src
+|       |   +-- index.ts
+|       +-- index.js
+|       +-- package.json
++-- scripts
+|   +-- dev.ts
+|   +-- build.ts
+|   +-- build-utils.ts
++-- package.json
++-- pnpm-workspace.yaml
++-- tsconfig.json
++-- vitest.config.ts
+```
+
+各目录职责：
+
+| 路径 | 作用 |
+| --- | --- |
+| `packages/*` | 每一个子包，例如 `reactivity`、`shared` |
+| `packages/*/src/index.ts` | 子包构建入口 |
+| `packages/*/package.json` | 子包元信息、导出配置、构建格式配置 |
+| `scripts/dev.ts` | 开发环境 watch 构建脚本 |
+| `scripts/build.ts` | 一次性构建脚本 |
+| `scripts/build-utils.ts` | 构建公共方法，例如读取包、生成 esbuild 配置、产物命名 |
+| `vitest.config.ts` | 测试环境配置 |
+
+## 二、为什么不使用 env 文件
+
+这个工程更接近框架源码项目，而不是普通业务应用。
+
+普通应用项目通常会用：
+
+```text
+.env.development
+.env.production
+.env.test
+```
+
+框架源码项目通常更关心这些内容：
+
+- 当前要构建哪个包
+- 当前要输出哪种模块格式
+- 当前构建是否压缩
+- 当前构建是否生成 sourcemap
+- 当前构建是否是 development 或 production 分支
+
+所以本工程采用 Vue core 类似的方式：通过命令参数控制构建。
+
+例如：
+
+```bash
+pnpm dev reactivity -f global
+pnpm build reactivity -f cjs
+pnpm build --prodOnly
+pnpm build --devOnly --sourceMap
+```
+
+## 三、根 package.json 脚本
+
+根目录 `package.json` 中配置了常用命令：
+
+```json
+{
+  "scripts": {
+    "dev": "tsx ./scripts/dev.ts",
+    "dev:prod": "tsx ./scripts/dev.ts --prod",
+    "build": "tsx ./scripts/build.ts",
+    "build:dev": "tsx ./scripts/build.ts --devOnly",
+    "build:prod": "tsx ./scripts/build.ts --prodOnly",
+    "build:test": "tsx ./scripts/build.ts --devOnly --sourceMap",
+    "test": "vitest",
+    "test:run": "vitest run"
+  }
+}
+```
+
+脚本说明：
+
+| 命令 | 说明 |
+| --- | --- |
+| `pnpm dev` | 开发环境 watch 构建，默认构建所有可构建包的 `esm-bundler` 格式 |
+| `pnpm dev:prod` | watch 生产分支构建，产物会走生产 define |
+| `pnpm build` | 默认全量构建，根据各包的 `buildOptions.formats` 输出多格式产物 |
+| `pnpm build:dev` | 只构建 development 产物 |
+| `pnpm build:prod` | 只构建 production 产物 |
+| `pnpm build:test` | 用 development 分支加 sourcemap 产物模拟测试构建 |
+| `pnpm test` | 启动 Vitest watch 测试 |
+| `pnpm test:run` | 执行一次 Vitest 测试 |
+
+## 四、子包构建配置
+
+每个可构建的子包都需要在自己的 `package.json` 中提供 `buildOptions`。
+
+以 `packages/reactivity/package.json` 为例：
+
+```json
+{
+  "name": "@vue/reactivity",
+  "main": "index.js",
+  "module": "dist/reactivity.esm-bundler.js",
+  "types": "dist/reactivity.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/reactivity.d.ts",
+      "node": {
+        "production": "./dist/reactivity.cjs.prod.js",
+        "development": "./dist/reactivity.cjs.js",
+        "default": "./index.js"
+      },
+      "module": "./dist/reactivity.esm-bundler.js",
+      "import": "./dist/reactivity.esm-bundler.js",
+      "require": "./index.js"
+    },
+    "./*": "./*"
+  },
+  "buildOptions": {
+    "name": "VueReactivity",
+    "formats": [
+      "esm-bundler",
+      "esm-browser",
+      "cjs",
+      "global"
+    ]
+  }
+}
+```
+
+关键字段说明：
+
+| 字段 | 说明 |
+| --- | --- |
+| `main` | CommonJS 入口，指向包根目录的 `index.js` |
+| `module` | ESM bundler 入口 |
+| `exports.node.production` | Node 生产环境 CJS 产物 |
+| `exports.node.development` | Node 开发环境 CJS 产物 |
+| `exports.import` | ESM 导入入口 |
+| `exports.require` | CommonJS require 入口 |
+| `buildOptions.name` | global / iife 格式下挂到全局对象的变量名 |
+| `buildOptions.formats` | 当前包支持输出的构建格式 |
+
+## 五、支持的构建格式
+
+当前构建脚本支持四种格式：
+
+| 格式 | esbuild format | 使用场景 | 输出示例 |
+| --- | --- | --- | --- |
+| `esm-bundler` | `esm` | 给 Vite、Rollup、Webpack 等打包器使用 | `reactivity.esm-bundler.js` |
+| `esm-browser` | `esm` | 浏览器原生 ESM 使用 | `reactivity.esm-browser.js` |
+| `cjs` | `cjs` | Node / CommonJS 使用 | `reactivity.cjs.js` |
+| `global` | `iife` | 浏览器 `<script>` 直接使用 | `reactivity.global.js` |
+
+生产构建会给部分格式追加 `.prod` 后缀：
+
+```text
+reactivity.cjs.prod.js
+reactivity.esm-browser.prod.js
+reactivity.global.prod.js
+```
+
+`esm-bundler` 默认只输出一个开发分支入口：
+
+```text
+reactivity.esm-bundler.js
+```
+
+这与 Vue core 的思路一致：bundler 版本通常交给上层打包器处理生产替换和压缩。
+
+## 六、开发环境构建配置
+
+开发环境入口是：
+
+```text
+scripts/dev.ts
+```
+
+它使用 `esbuild.context()` 创建 watch 构建任务。
+
+默认命令：
+
+```bash
+pnpm dev
+```
+
+默认行为：
+
+- 自动扫描 `packages` 下所有带 `buildOptions` 的包
+- 默认构建 `esm-bundler` 格式
+- 开启 sourcemap
+- 不压缩代码
+- 开启 watch，源文件变化后自动重新构建
+
+指定构建某一个包：
+
+```bash
+pnpm dev reactivity
+```
+
+指定格式：
+
+```bash
+pnpm dev reactivity -f global
+```
+
+等价于：
+
+```bash
+pnpm dev reactivity --format global
+```
+
+开发环境中的 define 配置：
+
+```ts
+{
+  __DEV__: 'true',
+  __TEST__: 'false',
+  __BROWSER__: formatName !== 'cjs',
+  __GLOBAL__: formatName === 'global',
+  __ESM_BUNDLER__: formatName === 'esm-bundler',
+  __ESM_BROWSER__: formatName === 'esm-browser',
+  __CJS__: formatName === 'cjs',
+  'process.env.NODE_ENV': '"development"'
+}
+```
+
+这些编译常量可以在源码里用于区分不同构建分支。
+
+例如：
+
+```ts
+if (__DEV__) {
+  console.warn('dev only warning')
+}
+```
+
+生产构建时，`__DEV__` 会被替换成 `false`，压缩器可以把这段开发代码删掉。
+
+## 七、生产环境构建配置
+
+生产环境入口是：
+
+```text
+scripts/build.ts
+```
+
+只构建生产产物：
+
+```bash
+pnpm build:prod
+```
+
+等价于：
+
+```bash
+tsx ./scripts/build.ts --prodOnly
+```
+
+生产环境构建行为：
+
+- `variant` 为 `production`
+- `minify` 开启
+- 默认不生成 sourcemap
+- `process.env.NODE_ENV` 替换为 `"production"`
+- `__DEV__` 替换为 `false`
+- 产物文件名追加 `.prod`
+
+例如 `reactivity` 包生产构建会输出：
+
+```text
+packages/reactivity/dist/reactivity.cjs.prod.js
+packages/reactivity/dist/reactivity.esm-browser.prod.js
+packages/reactivity/dist/reactivity.global.prod.js
+```
+
+生产构建适用于发布前检查或只想查看压缩产物的场景。
+
+## 八、默认全量构建
+
+默认构建命令：
+
+```bash
+pnpm build
+```
+
+默认行为：
+
+- 构建所有带 `buildOptions` 的包
+- 使用每个包自己的 `buildOptions.formats`
+- 如果没有通过 `-f` 指定格式，会先清空对应包的 `dist`
+- 对多数格式同时输出 development 和 production 产物
+- `esm-bundler` 只输出 development 入口
+
+以 `reactivity` 包为例，默认全量构建会输出：
+
+```text
+reactivity.esm-bundler.js
+reactivity.esm-browser.js
+reactivity.esm-browser.prod.js
+reactivity.cjs.js
+reactivity.cjs.prod.js
+reactivity.global.js
+reactivity.global.prod.js
+```
+
+## 九、指定包和指定格式构建
+
+构建某一个包：
+
+```bash
+pnpm build reactivity
+```
+
+构建名称中匹配 `shared` 的包：
+
+```bash
+pnpm build shared
+```
+
+指定格式构建：
+
+```bash
+pnpm build reactivity -f cjs
+```
+
+多个格式用逗号分隔：
+
+```bash
+pnpm build reactivity -f esm-bundler,cjs
+```
+
+只构建开发产物：
+
+```bash
+pnpm build reactivity -f cjs --devOnly
+```
+
+只构建生产产物：
+
+```bash
+pnpm build reactivity -f cjs --prodOnly
+```
+
+构建时开启 sourcemap：
+
+```bash
+pnpm build reactivity -f global --sourceMap
+```
+
+## 十、测试环境配置
+
+测试环境由 Vitest 负责，配置文件是：
+
+```text
+vitest.config.ts
+```
+
+当前配置：
+
+```ts
+import path from 'node:path'
+import { defineConfig } from 'vitest/config'
+
+export default defineConfig({
+  resolve: {
+    alias: {
+      '@vue/shared': path.resolve(__dirname, 'packages/shared/src'),
+      '@vue/reactivity': path.resolve(__dirname, 'packages/reactivity/src')
+    }
+  },
+  test: {
+    environment: 'node'
+  }
+})
+```
+
+这里最重要的是 `resolve.alias`。
+
+测试源码里会出现：
+
+```ts
+import { isObject } from '@vue/shared'
+```
+
+在源码开发阶段，我们希望它直接指向：
+
+```text
+packages/shared/src
+```
+
+而不是先依赖 `dist` 构建产物。这样测试可以直接覆盖最新源码，也更符合 monorepo 源码开发方式。
+
+运行测试：
+
+```bash
+pnpm test:run
+```
+
+测试构建：
+
+```bash
+pnpm build:test
+```
+
+当前 `build:test` 的配置是：
+
+```bash
+tsx ./scripts/build.ts --devOnly --sourceMap
+```
+
+含义：
+
+- 只构建 development 产物
+- 生成 sourcemap
+- 不走 `.env.test`
+- 测试代码本身由 Vitest 执行
+
+## 十一、构建工具选择
+
+当前工程使用 `esbuild` 完成构建。
+
+相关依赖：
+
+```json
+{
+  "devDependencies": {
+    "esbuild": "^0.28.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.4"
+  }
+}
+```
+
+各依赖作用：
+
+| 依赖 | 作用 |
+| --- | --- |
+| `esbuild` | 负责打包、格式转换、压缩、define 替换 |
+| `tsx` | 直接运行 TypeScript 构建脚本 |
+| `typescript` | 提供 TypeScript 类型能力 |
+| `vitest` | 测试框架 |
+
+Vue core 生产构建主要使用 Rollup，因为 Rollup 在库构建、tree-shaking 和产物控制上更细。本工程目前体量较小，使用 esbuild 足够简单直接。
+
+## 十二、如何新增一个包
+
+新增一个包时，需要满足以下约定：
+
+```text
+packages/new-package
++-- src
+|   +-- index.ts
++-- index.js
++-- package.json
+```
+
+`package.json` 至少需要包含：
+
+```json
+{
+  "name": "@vue/new-package",
+  "main": "index.js",
+  "module": "dist/new-package.esm-bundler.js",
+  "exports": {
+    ".": {
+      "module": "./dist/new-package.esm-bundler.js",
+      "import": "./dist/new-package.esm-bundler.js",
+      "require": "./index.js"
+    },
+    "./*": "./*"
+  },
+  "buildOptions": {
+    "formats": [
+      "esm-bundler",
+      "cjs"
+    ]
+  }
+}
+```
+
+如果这个包需要浏览器全局变量版本，可以增加：
+
+```json
+{
+  "buildOptions": {
+    "name": "VueNewPackage",
+    "formats": [
+      "esm-bundler",
+      "esm-browser",
+      "cjs",
+      "global"
+    ]
+  }
+}
+```
+
+然后执行：
+
+```bash
+pnpm build new-package
+```
+
+## 十三、常见问题
+
+### 1. 为什么包必须有 `buildOptions`
+
+构建脚本会扫描 `packages` 目录，只有带 `buildOptions` 的包才会被认为是可构建包。
+
+这样可以避免把纯测试包、临时包或未完成的包误打进 `dist`。
+
+### 2. 为什么 `esm-bundler` 不生成 `.prod.js`
+
+`esm-bundler` 面向上层打包器。生产环境下，通常由业务项目的 Vite、Rollup 或 Webpack 做 `process.env.NODE_ENV` 替换、tree-shaking 和压缩。
+
+所以当前工程默认只生成：
+
+```text
+xxx.esm-bundler.js
+```
+
+### 3. 为什么 CJS 有 `index.js`
+
+包根目录的 `index.js` 负责根据 `process.env.NODE_ENV` 加载不同 CJS 产物。
+
+示例：
+
+```js
+'use strict'
+
+if (process.env.NODE_ENV === 'production') {
+  module.exports = require('./dist/reactivity.cjs.prod.js')
+} else {
+  module.exports = require('./dist/reactivity.cjs.js')
+}
+```
+
+这也是 Vue core 包常见的入口方式。
+
+### 4. 为什么测试要配置 alias
+
+因为 monorepo 中子包之间会互相引用：
+
+```ts
+import { isObject } from '@vue/shared'
+```
+
+测试阶段应该直接引用源码，而不是依赖构建后的 `dist`。所以 Vitest 通过 alias 把 `@vue/shared` 指向 `packages/shared/src`。
+
+## 十四、推荐开发流程
+
+日常开发：
+
+```bash
+pnpm dev reactivity
+```
+
+调试 global 产物：
+
+```bash
+pnpm dev reactivity -f global
+```
+
+运行测试：
+
+```bash
+pnpm test:run
+```
+
+构建所有产物：
+
+```bash
+pnpm build
+```
+
+只检查生产产物：
+
+```bash
+pnpm build:prod
+```
+
+这个流程可以覆盖大部分源码开发场景。

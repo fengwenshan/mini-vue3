@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
     // 编译后的文件输出到 temp 目录。在开发过程中，这通常用于存放临时的编译产物，而不是最终发布给用户的生产代码。
-    "outDir": "temp",
+    "outDir": "dist",
     // 在开发框架本身时，可能为了简化调试流程或减少文件输出而关闭了 sourceMap。
-    "sourceMap": false,
+    "sourceMap": true,
     "target": "es2016",
     // 强制生成的文件使用 LF (\n) 换行符。
     "newLine": "LF",

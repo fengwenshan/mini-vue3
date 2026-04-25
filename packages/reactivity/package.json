@@ -10,8 +10,6 @@
   "main": "index.js",
   "module": "dist/reactivity.esm-bundler.js",
   "types": "dist/reactivity.d.ts",
-  "unpkg": "dist/reactivity.global.js",
-  "jsdelivr": "dist/reactivity.global.js",
   "files": [
     "index.js",
     "dist"
@@ -39,7 +37,7 @@
       "global"
     ]
   },
-   "sideEffects": false,
+  "sideEffects": false,
   "keywords": [],
   "author": "",
   "license": "ISC",

@@ -5,7 +5,13 @@
   "private": true,
   "scripts": {
     "dev": "tsx ./scripts/dev.ts",
-    "test": "vitest"
+    "dev:prod": "tsx ./scripts/dev.ts --prod",
+    "build": "tsx ./scripts/build.ts",
+    "build:dev": "tsx ./scripts/build.ts --devOnly",
+    "build:prod": "tsx ./scripts/build.ts --prodOnly",
+    "build:test": "tsx ./scripts/build.ts --devOnly --sourceMap",
+    "test": "vitest",
+    "test:run": "vitest run"
   },
   "keywords": [],
   "author": "",

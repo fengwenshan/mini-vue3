@@ -1,67 +1,56 @@
-﻿import { isObject } from "@vue/shared";
+﻿import { isObject } from '@vue/shared'
 
 // WeakMap 的 key 是弱引用，不再被使用时可被垃圾回收。
-const proxyMap = new WeakMap<Target, Target>();
+const proxyMap = new WeakMap<object, object>()
 
 export enum ReactiveFlags {
   /** 用于判断一个值是否已经是响应式代理对象。 */
-  IS_REACTIVE = '__v_isReactive',
-}
-
-// 参考 Vue3：Target 统一约束可被代理对象，便于内部读取响应式标记。
-export interface Target {
-  [ReactiveFlags.IS_REACTIVE]?: boolean;
-  [key: string | symbol]: any;
+  IS_REACTIVE = '__v_isReactive'
 }
 
 // 业务侧只暴露原对象属性，不暴露内部标记。
-export type Reactive<T extends object> = T;
+export type Reactive<T extends object> = T
 
-// 依赖收集（占位逻辑）
-function track(target: object, key: string | symbol) {
-  console.log(target, key);
+function isTarget(value: unknown): value is object {
+  return isObject(value)
 }
 
-function isTarget(value: unknown): value is Target {
-  return isObject(value);
-}
-
-function createReactiveObject<T extends Target>(target: T): Reactive<T>;
+function createReactiveObject<T extends object>(target: T): Reactive<T>
 function createReactiveObject(target: object): object {
   if (!isTarget(target)) {
-    return target;
+    return target
   }
 
   // 如果本身已经是代理对象，直接返回。
-  if (target[ReactiveFlags.IS_REACTIVE]) {
-    return target;
+  if (Reflect.get(target, ReactiveFlags.IS_REACTIVE)) {
+    return target
   }
 
   // 如果原始对象已经代理过，返回缓存的代理对象。
-  const existingProxy = proxyMap.get(target);
+  const existingProxy = proxyMap.get(target)
   if (existingProxy) {
-    return existingProxy;
+    return existingProxy
   }
 
   const proxy = new Proxy(target, {
     get(target, prop, receiver) {
       // 响应式标记通过 get 虚拟返回，避免污染原始对象。
       if (prop === ReactiveFlags.IS_REACTIVE) {
-        return true;
+        return true
       }
 
-      track(target, prop);
-      return Reflect.get(target, prop, receiver);
+      const value = Reflect.get(target, prop, receiver)
+      return isObject(value) ? reactive(value) : value
     },
     set(target, prop, newValue, receiver): boolean {
-      return Reflect.set(target, prop, newValue, receiver);
+      return Reflect.set(target, prop, newValue, receiver)
     }
-  });
+  })
 
-  proxyMap.set(target, proxy);
-  return proxy;
+  proxyMap.set(target, proxy)
+  return proxy
 }
 
-export function reactive<T extends Target>(target: T): Reactive<T> {
-  return createReactiveObject(target);
+export function reactive<T extends object>(target: T): Reactive<T> {
+  return createReactiveObject(target)
 }

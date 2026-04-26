@@ -1,50 +1,53 @@
-import { isObject } from '@vue/shared'
-import { reactive } from './reactive'
+import { isReactive, toRaw, toReactive } from './reactive'
+import { ReactiveFlags } from './constants'
 
-export interface Ref<T = any> {
-  value: T
+export const IS_REF: '__v_isRef' = '__v_isRef'
+
+export interface Ref<T = any, S = T> {
+  get value(): T
+  set value(_: S)
 }
 
-export enum RefFlags {
-  IS_REF = '__v_isRef'
-}
-
-class RefImpl<T> {
-  public readonly [RefFlags.IS_REF] = true
-  private _value: T
+class RefImpl<T = any> {
+  // 解包类型
   private _rawValue: T
+  // 响应类型
+  private _value: T
 
-  constructor(value: T) {
-    this._rawValue = value
-    this._value = toReactive(value)
+  public readonly [ReactiveFlags.IS_REF]: true = true
+
+  constructor(rawValue: T) {
+    this._rawValue = toRaw(rawValue)
+    this._value = toReactive(rawValue)
   }
 
   get value(): T {
     return this._value
   }
 
-  set value(newValue: T) {
-    if (Object.is(newValue, this._rawValue)) {
-      return
+  set value(newVal: T) {
+    const oldValue = this._rawValue
+    if (isReactive(newVal) || isRef(newVal)) {
+      this._rawValue = toRaw(newVal)
+      this._value = newVal
+    } else if (!Object.is(newVal, oldValue)) {
+      this._rawValue = toRaw(newVal)
+      this._value = toReactive(newVal)
     }
-
-    this._rawValue = newValue
-    this._value = toReactive(newValue)
   }
 }
 
 export function ref<T>(value: T): Ref<T> {
+  if (isRef(value)) {
+    return value
+  }
   return new RefImpl(value)
 }
 
-export function isRef(value: unknown): value is Ref {
-  return isObject(value) && Reflect.get(value, RefFlags.IS_REF) === true
+export function isRef(value: any): value is Ref {
+  return value ? value[IS_REF] === true : false
 }
 
-export function unRef<T>(value: T | Ref<T>): T {
-  return isRef(value) ? value.value : value
-}
-
-function toReactive<T>(value: T): T {
-  return isObject(value) ? reactive(value) as T : value
+export function unRef<T = any>(ref: T | Ref<T>): T {
+  return isRef(ref) ? ref.value : ref
 }

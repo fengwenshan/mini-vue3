@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "tsx ./scripts/dev.ts",
+    "dev:reacitve": "pnpm dev reactivity -f esm-browser",
     "dev:prod": "tsx ./scripts/dev.ts --prod",
     "build": "tsx ./scripts/build.ts",
     "build:dev": "tsx ./scripts/build.ts --devOnly",

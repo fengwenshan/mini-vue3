@@ -42,7 +42,7 @@
     "paths": {
       "@vue/*": ["packages/*/src"]
     },
-    // 这是一个较新的 TypeScript 特性，旨在优化大型项目中类型声明文件的生成速度，非常适合 Vue 这样的库开发场景。
+    // 这是一个较新的 TypeScript 特性，旨在优化大型项目中类型声明文件的生成速度
     "isolatedDeclarations": true,
     // 这是启用项目引用的关键。它允许将这个庞大的 Vue 仓库拆分成多个独立的子项目（例如 runtime-core, reactivity, compiler-core 等），每个子项目可以独立编译和进行类型检查。这极大地提升了大型项目的编译性能和增量构建速度。
     "composite": true

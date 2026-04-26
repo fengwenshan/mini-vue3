@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import { reactive, ReactiveFlags } from '../src/reactive'
+import { reactive } from '../src/reactive'
+import { ReactiveFlags } from '../src/constants'
 
 function isReactive(value: object): boolean {
   return Reflect.get(value, ReactiveFlags.IS_REACTIVE) === true

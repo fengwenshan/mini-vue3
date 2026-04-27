@@ -1,9 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { isRef, reactive, ReactiveFlags, ref, unRef } from '../src'
-
-function isReactive(value: object): boolean {
-  return Reflect.get(value, ReactiveFlags.IS_REACTIVE) === true
-}
+import { isReactive, isRef, reactive, ReactiveFlags, ref, unRef } from '../src'
 
 describe('02_响应式 ref', () => {
   test('1. ref 会把普通值包装到 value 上', () => {

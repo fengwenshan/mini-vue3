@@ -3,33 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <title>Effect</title>
 </head>
 <body>
-<!-- <script type="module">
-  import { reactive, isReactive, isProxy } from './vue.esm-browser.js'
-  // import { reactive, isReactive, isProxy } from '../dist/reactivity.esm-browser.js'
-  const original = {
-    name: 'why',
-    age: 18,
-    attrs: {
-      parentName: 'zhangsan'
-    }
-  }
-  const proxy = reactive(original)
-  const proxy1 = reactive(original)
-  const proxy2 = reactive(proxy1)
-  console.log('1.代理对象：', proxy)
-  console.log('1.原始对象与代理对象不同：', original === proxy)
-  console.log('2.重复代理同地址对象，返回同一代理对象：', proxy === proxy1)
-  console.log('3.嵌套对象代理：', proxy.attrs === original.attrs)
-  console.log('4.代理对象被代理,地址相等：', proxy1 === proxy2)
-  console.log('5.判断是否响应式：', isReactive(original), isReactive(proxy))
-  console.log('5.判断是否被代理：', isProxy(original), isProxy(proxy))
-</script> -->
-
-
-<!-- <script type="module">
+  <script type="module">
   // import { ref, reactive, isRef } from '../dist/reactivity.esm-browser.js'
   import { ref, isRef, reactive } from './vue.esm-browser.js'
 
@@ -64,7 +41,6 @@
   r1.value = r3
   console.log(r1.value)
 
-</script> -->
-
+</script>
 </body>
 </html>

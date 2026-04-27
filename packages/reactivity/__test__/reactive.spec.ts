@@ -1,20 +1,19 @@
 import { describe, expect, test } from 'vitest'
-import { reactive } from '../src/reactive'
+import { isReactive, reactive } from '../src/reactive'
 import { ReactiveFlags } from '../src/constants'
-
-function isReactive(value: object): boolean {
-  return Reflect.get(value, ReactiveFlags.IS_REACTIVE) === true
-}
 
 /*
   toBe 断言两个对象地址是否相等
 */
 describe('01_响应式 reactive', () => {
   test('1. 原始对象和代理对象引用地址不相等', () => {
-    const original = { foo: 1 }
+    const original = { 
+      name: 'why',
+    }
     const proxy = reactive(original)
-
-    expect(proxy).not.toBe(original)
+    proxy.name = 'lisi'
+    expect(proxy.name).toBe(original.name)
+    expect(proxy).not.toBe(original)    
   })
 
   test('2. 重复代理同一个对象，返回同一个代理对象', () => {
@@ -23,7 +22,6 @@ describe('01_响应式 reactive', () => {
     const proxy2 = reactive(original)
     const proxy3 = reactive(proxy1)
     
-
     expect(proxy1).toBe(proxy2)
     expect(proxy1).toBe(proxy3)
   })
@@ -35,10 +33,11 @@ describe('01_响应式 reactive', () => {
       }
     }
     const proxy = reactive(original)
-
+    proxy.foo.bar = 2
     expect(isReactive(proxy)).toBe(true)
     expect(isReactive(proxy.foo)).toBe(true)
     expect(proxy.foo).not.toBe(original.foo)
+    expect(proxy.foo.bar).toBe(original.foo.bar)
   })
 
   test('4. 重复访问同一个嵌套对象，返回同一个代理对象', () => {
